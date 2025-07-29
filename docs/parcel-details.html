@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parcel Details</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html, body {
+            height: 100%; /* Ensure html and body take full viewport height */
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Hide overall body scrollbar */
+        }
+        .main-container {
+            display: flex;
+            flex-direction: column; /* Default to column for mobile */
+            flex-grow: 1;
+            width: 100%;
+            height: 100%; /* Ensure main-container takes full available height */
+        }
+        @media (min-width: 768px) { /* On medium screens and up, make it two columns */
+            .main-container {
+                flex-direction: row;
+            }
+        }
+        .map-section {
+            flex: 1;
+            min-height: 400px; /* Minimum height for map on mobile */
+            position: relative;
+            background-color: #1a1a1a; /* Placeholder background */
+        }
+        @media (min-width: 768px) {
+            .map-section {
+                min-height: 100%; /* Takes full height of main-container on desktop */
+                width: 50%; /* Takes half width */
+            }
+        }
+        .details-section {
+            flex: 1;
+            padding: 2rem;
+            background-color: #1a1a1a; /* Dark background for consistency */
+            border-left: 1px solid #333333; /* Separator line */
+            overflow-y: auto; /* Allow scrolling for details content */
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+            height: 100%; /* Important: Ensure this takes full available height to enable scrolling */
+        }
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .details-section::-webkit-scrollbar {
+            display: none;
+        }
+        .detail-card {
+            background-color: #0d0d0d;
+            border: 1px solid #222;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        .detail-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #8A05FF; /* Purple accent */
+        }
+        .detail-card p, .detail-card ul {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #ccc;
+        }
+        .detail-card ul li {
+            margin-bottom: 0.5rem;
+        }
+        .detail-card strong {
+            color: #ffffff;
+            margin-right: 0.5rem;
+        }
+        .back-button {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.75rem 1.5rem;
+            background-color: #8A05FF;
+            color: white;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            text-decoration: none;
+        }
+        .back-button:hover {
+            background-color: #7A04E6;
+            transform: translateY(-1px);
+        }
+        #parcelDetailsMap {
+            height: 100%; /* Fill map-section */
+            width: 100%; /* Fill map-section */
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Left Section: Map -->
+        <div class="map-section">
+            <div id="parcelDetailsMap" class="relative"></div>
+        </div>
+
+        <!-- Right Section: Details -->
+        <div class="details-section">
+            <h1 class="text-3xl font-bold mb-6 text-center lg:text-left">Parcel Details: <span id="detailParcelNumber" class="purple-accent"></span></h1>
+
+            <div id="loadingDetails" class="text-center text-gray-400">Loading details...</div>
+            <div id="errorMessage" class="text-center text-red-500 hidden"></div>
+
+            <div id="parcelData" class="hidden">
+                <div class="detail-card">
+                    <h3>Basic Information</h3>
+                    <p><strong>Parcel ID:</strong> <span id="detailParcelId"></span></p>
+                    <p><strong>Area:</strong> <span id="detailArea"></span></p>
+                    <p><strong>Registration Section:</strong> <span id="detailRegSection"></span></p>
+                    <p><strong>Land Use:</strong> <span id="detailLandUse"></span></p>
+                    <p><strong>Zoning Code:</strong> <span id="detailZoningCode"></span></p>
+                </div>
+
+                <div class="detail-card">
+                    <h3>Associated Parties</h3> <!-- Renamed for clarity -->
+                    <div id="ownersList">
+                        <p class="text-gray-500">No associated parties found for this parcel.</p>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <h3>Rights, Restrictions, Responsibilities (RRRs)</h3>
+                    <div id="rrrsList">
+                        <p class="text-gray-500">No Rights, Restrictions, or Responsibilities found for this parcel.</p>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <h3>Valuations</h3>
+                    <div id="valuationsList">
+                        <p class="text-gray-500">No valuations found for this parcel.</p>
+                    </div>
+                </div>
+            </div>
+
+            <a href="/parcels-viewer" class="back-button">Back to Map Viewer</a>
+        </div>
+    </div>
+
+    <script>
+        // Function to format date and time
+        function formatDateTime(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            if (isNaN(date)) return 'N/A'; // Handle invalid date strings
+
+            const day = date.getDate();
+            const month = date.toLocaleString('en-US', { month: 'long' });
+            const year = date.getFullYear();
+            let hours = date.getHours();
+            const minutes = date.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+
+            // Function to add ordinal suffix
+            function getOrdinalSuffix(d) {
+                if (d > 3 && d < 21) return 'th';
+                switch (d % 10) {
+                    case 1: return 'st';
+                    case 2: return 'nd';
+                    case 3: return 'rd';
+                    default: return 'th';
+                }
+            }
+
+            return `${day}${getOrdinalSuffix(day)} ${month}, ${year} : ${hours}.${formattedMinutes} ${ampm}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const parcelId = params.get('parcelId');
+
+            const loadingDetails = document.getElementById('loadingDetails');
+            const errorMessage = document.getElementById('errorMessage');
+            const parcelDataContainer = document.getElementById('parcelData');
+            const detailParcelNumber = document.getElementById('detailParcelNumber');
+
+            let map; // Declare map globally for this script
+
+            if (!parcelId) {
+                errorMessage.textContent = 'Error: No Parcel ID provided in the URL.';
+                errorMessage.classList.remove('hidden');
+                loadingDetails.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/parcel-details/${parcelId}`);
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch parcel details.');
+                }
+
+                const data = await response.json();
+                const parcel = data.parcel;
+
+                // Populate basic parcel info
+                detailParcelNumber.textContent = parcel.number;
+                document.getElementById('detailParcelId').textContent = parcel.id;
+                
+                const areaSqM = parseFloat(parcel.area);
+                let formattedAreaDetails = 'N/A';
+                if (!isNaN(areaSqM)) {
+                    const areaHa = areaSqM / 10000;
+                    formattedAreaDetails = `${areaHa.toFixed(3)} HA | ${areaSqM.toFixed(3)} M²`;
+                }
+                document.getElementById('detailArea').textContent = formattedAreaDetails;
+
+                document.getElementById('detailRegSection').textContent = parcel.registrationSection || 'N/A';
+                document.getElementById('detailLandUse').textContent = parcel.landUse || 'N/A';
+                document.getElementById('detailZoningCode').textContent = parcel.zoningCode || 'N/A';
+
+                // Populate Associated Parties (previously Owners)
+                const ownersList = document.getElementById('ownersList');
+                ownersList.innerHTML = '';
+                if (data.owners && data.owners.length > 0) {
+                    data.owners.forEach(owner => {
+                        const ownerDiv = document.createElement('div');
+                        ownerDiv.className = 'mb-2 p-3 bg-gray-900 rounded-md';
+                        let name = owner.first_name && owner.last_name ? `${owner.first_name} ${owner.last_name}` : owner.organization_name;
+                        ownerDiv.innerHTML = `
+                            <p><strong>Name:</strong> ${name || 'N/A'}</p>
+                            <p><strong>Type:</strong> ${owner.party_type || 'N/A'}</p>
+                            <p><strong>National ID/Reg No:</strong> ${owner.national_id_or_registration_number || 'N/A'}</p>
+                            <p><strong>Email:</strong> ${owner.contact_email || 'N/A'}</p>
+                            <p><strong>Phone:</strong> ${owner.contact_phone || 'N/A'}</p>
+                            <p><strong>KRA PIN:</strong> ${owner.kra_pin || 'N/A'}</p>
+                        `;
+                        ownersList.appendChild(ownerDiv);
+                    });
+                } else {
+                    ownersList.innerHTML = '<p class="text-gray-500">No associated parties found for this parcel.</p>';
+                }
+
+                // Populate RRRs
+                const rrrsList = document.getElementById('rrrsList');
+                rrrsList.innerHTML = '';
+                if (data.rrrs && data.rrrs.length > 0) {
+                    data.rrrs.forEach(rrr => {
+                        const rrrDiv = document.createElement('div');
+                        rrrDiv.className = 'mb-2 p-3 bg-gray-900 rounded-md';
+                        rrrDiv.innerHTML = `
+                            <p><strong>Type:</strong> ${rrr.rrr_type || 'N/A'}</p>
+                            <p><strong>Description:</strong> ${rrr.description || 'N/A'}</p>
+                            <p><strong>Valid From:</strong> ${formatDateTime(rrr.valid_from_date)}</p>
+                            <p><strong>Valid To:</strong> ${rrr.valid_to_date ? formatDateTime(rrr.valid_to_date) : 'Perpetual'}</p>
+                            <p><strong>Party:</strong> ${rrr.party_name || 'N/A'}</p>
+                        `;
+                        rrrsList.appendChild(rrrDiv);
+                    });
+                } else {
+                    rrrsList.innerHTML = '<p class="text-gray-500">No Rights, Restrictions, or Responsibilities found for this parcel.</p>';
+                }
+
+                // Populate Valuations
+                const valuationsList = document.getElementById('valuationsList');
+                valuationsList.innerHTML = '';
+                if (data.valuations && data.valuations.length > 0) {
+                    data.valuations.forEach(val => {
+                        const valDiv = document.createElement('div');
+                        valDiv.className = 'mb-2 p-3 bg-gray-900 rounded-md';
+                        valDiv.innerHTML = `
+                            <p><strong>Market Value:</strong> KES ${val.market_value ? parseFloat(val.market_value).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'N/A'}</p>
+                            <p><strong>Valuation Date:</strong> ${formatDateTime(val.valuation_date)}</p>
+                            <p><strong>Assessed Value:</strong> KES ${val.assessed_value ? parseFloat(val.assessed_value).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'N/A'}</p>
+                            <p><strong>Valuer:</strong> ${val.valuer_name || 'N/A'}</p>
+                            <p><strong>Notes:</strong> ${val.valuation_notes || 'N/A'}</p>
+                        `;
+                        valuationsList.appendChild(valDiv);
+                    });
+                } else {
+                    valuationsList.innerHTML = '<p class="text-gray-500">No valuations found for this parcel.</p>';
+                }
+
+                // Initialize map and display single parcel
+                map = L.map('parcelDetailsMap', { zoomControl: false }).setView([0, 0], 1);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }).addTo(map);
+
+                if (parcel.geometry) {
+                    const singleParcelLayer = L.geoJSON(parcel.geometry, {
+                        style: function(feature) {
+                            return {
+                                fillColor: '#007bff',
+                                weight: 3,
+                                opacity: 1,
+                                color: 'black',
+                                dashArray: '0',
+                                fillOpacity: 0.6
+                            };
+                        }
+                    }).addTo(map);
+
+                    if (singleParcelLayer.getBounds().isValid()) {
+                        map.fitBounds(singleParcelLayer.getBounds(), { padding: [50, 50] });
+                    }
+                } else {
+                    console.warn("Parcel geometry not available.");
+                }
+
+                loadingDetails.classList.add('hidden');
+                parcelDataContainer.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error in parcel-details.html:', error);
+                errorMessage.textContent = `Could not load parcel details: ${error.message}`;
+                errorMessage.classList.remove('hidden');
+                loadingDetails.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

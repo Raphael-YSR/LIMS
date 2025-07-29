@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parcel Viewer</title>
+
+    <link rel="stylesheet" href="/style.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000; /* Pure black background for consistency */
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Prevent body scroll due to absolute positioning */
+        }
+        #map {
+            height: 100vh;
+            width: 100%;
+            position: relative;
+        }
+        /* Custom popup styling */
+        #parcelInfoPopup {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: rgba(30, 30, 30, 0.9); /* Darker, slightly translucent background */
+            border: 1px solid #444;
+            border-radius: 0.25rem; /* Less rounded corners */
+            padding: 1.5rem;
+            z-index: 1000; /* Above the map */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            color: #ffffff; /* White text for readability */
+            max-width: 320px;
+            width: 90%; /* Responsive width */
+            font-size: 0.9rem;
+            display: none; /* Hidden by default */
+            transition: all 0.3s ease-in-out;
+            transform: translateX(100%); /* Start off-screen */
+            opacity: 0;
+            font-family: 'Inter', sans-serif; /* Changed to Inter font */
+        }
+
+        #parcelInfoPopup.visible {
+            display: block; /* Make it visible */
+            transform: translateX(0); /* Slide into view */
+            opacity: 1;
+        }
+
+        #parcelInfoPopup .close-button {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 1.25rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0.25rem;
+            border-radius: 50%;
+            transition: background-color 0.2s ease;
+        }
+        #parcelInfoPopup .close-button:hover {
+            background-color: #555;
+            color: white;
+        }
+        #parcelInfoPopup h3 {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+            color: #ffffff; /* Purple accent */
+        }
+        #parcelInfoPopup p {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        /* New button styling */
+        #parcelInfoPopup .detail-button {
+            display: block;
+            width: 100%;
+            margin-top: 1.25rem;
+            padding: 0.75rem 1rem;
+            background-color: transparent; /* Black background */
+            color: white; /* White text initially */
+            border: 1px solid #7A04E6; /* Purple border */
+            border-radius: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden; /* Hide overflow for the fill effect */
+            z-index: 1;
+            transition: color 0.3s ease-in-out; /* Smooth text color change */
+        }
+
+        #parcelInfoPopup .detail-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0%; /* Start with no width */
+            height: 100%;
+            background-color: #7A04E6; /* White fill color */
+            transition: width 0.3s ease-in-out; /* Animate width change */
+            z-index: -1; /* Behind the text */
+        }
+
+        #parcelInfoPopup .detail-button:hover {
+            color: white; /* Text color changes to black on hover */
+            border-color: #7A04E6; /* Keep purple border on hover */
+        }
+
+        #parcelInfoPopup .detail-button:hover::before {
+            width: 100%; /* Fill from left to right on hover */
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 640px) {
+            #parcelInfoPopup {
+                top: auto;
+                bottom: 1rem;
+                left: 1rem;
+                right: 1rem;
+                max-width: unset; /* Allow full width on small screens */
+            }
+        }
+    </style>
+
+</head>
+<body class="font-sans antialiased text-gray-800">
+    <div id="map" class="relative w-full h-screen"></div>
+
+    <!-- Custom Parcel Info Popup -->
+    <div id="parcelInfoPopup" class="hidden">
+        <button class="close-button" onclick="hideCustomPopup()">✖</button>
+        <h3 id="popupParcelNo"></h3>
+        <p><strong>Area:</strong> <span id="popupArea"></span></p>
+        <p><strong>Reg. Section:</strong> <span id="popupRegSection">Loading...</span></p>
+        <p><strong>Land Use:</strong> <span id="popupLandUse">Loading...</span></p>
+        <a id="viewDetailsButton" href="#" class="detail-button">View Full Details</a>
+    </div>
+
+    <!-- spinner/message -->
+    <div id="loading" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center text-white text-xl z-50 hidden">
+        <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+        <p class="ml-4">Loading parcels and insights...</p>
+    </div>
+
+    <script src="/docs/map.js"></script>
+</body>
+</html>

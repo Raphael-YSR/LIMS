@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Party</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            color: #ffffff;
+        }
+        .custom-input:focus {
+            outline: none;
+            border: 1px solid #8A05FF; /* Purple border on focus */
+            box-shadow: 0 0 0 2px rgba(138, 5, 255, 0.2);
+        }
+        .purple-bg {
+            background-color: #8A05FF;
+        }
+        .purple-bg:hover {
+            background-color: #7A04E6;
+        }
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .tab-button.active {
+            background-color: #8A05FF;
+            color: white;
+            border-color: #8A05FF;
+        }
+        .tab-button:not(.active):hover {
+            background-color: #1a1a1a;
+            border-color: #333333;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-md w-full px-4">
+        <h2 class="text-white text-2xl font-semibold mb-2 text-center">Add New Party</h2>
+        <p class="text-gray-400 text-sm mb-8 text-center">Select the party type to add a new user or entity to the system.</p>
+
+        <!-- Mode Selection Bar -->
+        <div class="flex justify-center gap-4 mb-8 bg-gray-900 p-2 rounded-lg">
+            <button id="tabAdmin" class="tab-button bg-gray-700 text-gray-300">Admin</button>
+            <button id="tabIndividual" class="tab-button bg-gray-700 text-gray-300">Individual</button>
+            <button id="tabOrganization" class="tab-button bg-gray-700 text-gray-300">Organization</button>
+        </div>
+
+        <form id="addPartyForm" class="space-y-4">
+            <!-- Common Fields -->
+            <div id="commonFields">
+                <div>
+                    <label for="email" class="block text-white text-sm font-medium mb-2">Email <span class="text-red-500">*</span></label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        class="custom-input w-full px-3 py-3 rounded-md bg-transparent border border-gray-600 text-white placeholder-gray-500 transition-colors duration-200"
+                        placeholder="email@example.com"
+                        required
+                    >
+                </div>
+                <div>
+                    <label for="password" class="block text-white text-sm font-medium mb-2">Password <span class="text-red-500">*</span></label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="custom-input w-full px-3 py-3 rounded-md bg-transparent border border-gray-600 text-white placeholder-gray-500 transition-colors duration-200"
+                        required
+                    >
+                </div>
+                <div>
+                    <label for="kraPin" class="block text-white text-sm font-medium mb-2">KRA PIN (Optional)</label>
+                    <input
+                        type="text"
+                        id="kraPin"
+                        name="kraPin"
+                        class="custom-input w-full px-3 py-3 rounded-md bg-transparent border border-gray-600 text-white placeholder-gray-500 transition-colors duration-200"
+                        placeholder="A123456789Z"
+                    >
+                </div>
+                <div>
+                    <label for="contactPhone" class="block text-white text-sm font-medium mb-2">Contact Phone (Optional)</label>
+                    <input
+                        type="tel"
+                        id="contactPhone"
+                        name="contactPhone"
+                        class="custom-input w-full px-3 py-3 rounded-md bg-transparent border border-gray-600 text-white placeholder-gray-500 transition-colors duration-200"
+                        placeholder="+2547XXXXXXXX"
+                    >
+                </div>
+                <div>
+                    <label for="address" class="block text-white text-sm font-medium mb-2">Address (Optional)</label>
+                    <textarea
+                        id="address"
+                        name="address"
+                        rows="3"
+                        class="custom-input w-full px-3 py-3 rounded-md bg-transparent border border-gray-600 text-white placeholder-gray-500 transition-colors duration-200"
+                        placeholder="123 Main St, City, Country"
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- Specific Fields for Individual/Admin -->
+            <div id="individualFields" class="tab-content">
+                <div>
+                    <label for="firstName" class="block text-white text-sm font-medium mb-2">First Name <span class="text-red-500">*</span></label>
+                    <input
+                        type="text"
+                        id="firstName"
+                        name="firstName"
+                        class="custom-input w-full px-3 py-3 rounded-md bg-transparent border border-gray-600 text-white placeholder-gray-500 transition-colors duration-200"
+                        placeholder="John"
+                    >
+                </div>
+                <div>
+                    <label for="lastName" class="block text-white text-sm font-medium mb-2">Last Name <span class="text-red-500">*</span></label>
+                    <input
+                        type="text"
+                        id="lastName"
+                        name="lastName"
+                        class="custom-input w-full px-3 py-3 rounded-md bg-transparent border border-gray-600 text-white placeholder-gray-500 transition-colors duration-200"
+                        placeholder="Doe"
+                    >
+                </div>
+            </div>
+
+            <!-- Specific Fields for Organization -->
+            <div id="organizationFields" class="tab-content">
+                <div>
+                    <label for="organizationName" class="block text-white text-sm font-medium mb-2">Organization Name <span class="text-red-500">*</span></label>
+                    <input
+                        type="text"
+                        id="organizationName"
+                        name="organizationName"
+                        class="custom-input w-full px-3 py-3 rounded-md bg-transparent border border-gray-600 text-white placeholder-gray-500 transition-colors duration-200"
+                        placeholder="Example Corp"
+                    >
+                </div>
+            </div>
+
+            <button
+                type="submit"
+                class="w-full purple-bg text-white py-3 mt-10 rounded-md font-medium transition-colors duration-200"
+            >
+                Add Party
+            </button>
+        </form>
+        <div id="message" class="mt-4 text-center"></div>
+    </div>
+    <script src="/auth/add-parties.js"></script>
+</body>
+</html>

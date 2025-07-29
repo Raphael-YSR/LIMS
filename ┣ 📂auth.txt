@@ -1,0 +1,28 @@
+┣ 📂auth
+┃ ┣ 📜add-parties.html
+┃ ┣ 📜add-parties.js
+┃ ┗ 📜admin.js
+┣ 📂docs
+┃ ┣ 📜admin-portal.html
+┃ ┣ 📜documentation.html
+┃ ┣ 📜map.js
+┃ ┣ 📜parcel-search.html
+┃ ┣ 📜parcels-viewer.html
+┃ ┣ 📜permit-applications.html
+┃ ┗ 📜property-registration.html
+┣ 📂fonts
+┃ ┗ 📜Inter_18pt-Regular.ttf
+┣ 📂sql
+┃ ┗ 📜lads.sql
+┣ 📂src
+┃ ┣ 📜routes.js
+┃ ┗ 📜server.js
+┣ 📜.env
+┣ 📜index.html
+┣ 📜login.html
+┣ 📜next.md
+┣ 📜package.json
+┗ 📜style.css
+
+-------
+

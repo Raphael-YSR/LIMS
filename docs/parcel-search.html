@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parcel Search</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        .search-container {
+            background-color: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 0.35rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #8A05FF;
+            text-align: center;
+        }
+        .custom-input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.3rem;
+            background-color: transparent;
+            border: 1px solid #666;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        .custom-input:focus {
+            outline: none;
+            border-color: #8A05FF;
+            box-shadow: 0 0 0 2px rgba(138, 5, 255, 0.2);
+        }
+        #searchResults {
+            margin-top: 1.5rem;
+            background-color: #0d0d0d;
+            border: 1px solid #222;
+            border-radius: 0.75rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .search-result-item {
+            padding: 1rem;
+            border-bottom: 1px solid #222;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+        .search-result-item:hover {
+            background-color: #1a1a1a;
+        }
+        .search-result-item h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #8A05FF;
+            margin-bottom: 0.25rem;
+        }
+        .search-result-item p {
+            font-size: 0.85rem;
+            color: #ccc;
+        }
+        .no-results {
+            padding: 1rem;
+            text-align: center;
+            color: #ccc;
+        }
+        .back-button {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.75rem 1.5rem;
+            background-color: #8A05FF;
+            color: white;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            text-decoration: none;
+        }
+        .back-button:hover {
+            background-color: #7A04E6;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <h1 class="text-white font-bold">SEARCH PARCELS </h1>
+        <input
+            type="text"
+            id="parcelSearchInput"
+            class="custom-input mt-6"
+            placeholder="Enter parcel number..."
+        >
+        <div id="searchResults" class="hidden">
+            <!-- Search results will be injected here -->
+        </div>
+    </div>
+    <a href="/" class="back-button">Back to Dashboard</a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('parcelSearchInput');
+            const searchResultsDiv = document.getElementById('searchResults');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                const query = searchInput.value.trim();
+
+                if (query.length < 2) { // Only search if at least 2 characters are typed
+                    searchResultsDiv.innerHTML = '';
+                    searchResultsDiv.classList.add('hidden');
+                    return;
+                }
+
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`/api/parcel-search?query=${encodeURIComponent(query)}`);
+                        if (!response.ok) {
+                            if (response.status === 401) {
+                                window.location.href = '/login'; // Redirect to login if unauthorized
+                                return;
+                            }
+                            throw new Error('Failed to fetch search results.');
+                        }
+                        const results = await response.json();
+                        displaySearchResults(results);
+                    } catch (error) {
+                        console.error('Search error:', error);
+                        searchResultsDiv.innerHTML = `<div class="no-results text-red-500">Error: ${error.message}</div>`;
+                        searchResultsDiv.classList.remove('hidden');
+                    }
+                }, 300); // Debounce search to 300ms
+            });
+
+            function displaySearchResults(results) {
+                searchResultsDiv.innerHTML = ''; // Clear previous results
+                if (results.length === 0) {
+                    searchResultsDiv.innerHTML = '<div class="no-results">No parcels found.</div>';
+                    searchResultsDiv.classList.remove('hidden');
+                } else {
+                    results.forEach(parcel => {
+                        const item = document.createElement('div');
+                        item.className = 'search-result-item';
+                        item.innerHTML = `
+                            <h3>${parcel.parcel_number}</h3>
+                            <p>Area: ${parcel.area_sqm} sqm</p>
+                            <p>Section: ${parcel.registration_section_name || 'N/A'}</p>
+                        `;
+                        item.addEventListener('click', () => {
+                            window.location.href = `/parcel-details?parcelId=${parcel.parcel_id}`;
+                        });
+                        searchResultsDiv.appendChild(item);
+                    });
+                    searchResultsDiv.classList.remove('hidden');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
